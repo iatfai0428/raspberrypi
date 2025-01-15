@@ -34,20 +34,11 @@ def reqTime(addr='uk.pool.ntp.org'):
         t -= REF_TIME_1970
     return time.gmtime(t)
 
-
-
-
 #utime.sleep_ms(500)
 print(connect())
 tim = reqTime()
 rtc = RTC()
 rtc.datetime((tim[0], tim[1], tim[2], 0, tim[3]+8, tim[4], tim[5], 0))
-
-
-
-
-
-
 
 utime.sleep_ms(100)
 #print(i2c.readfrom(addr, 2))

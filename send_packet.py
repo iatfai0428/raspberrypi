@@ -11,12 +11,14 @@ import asyncio
 
 def connect(ssid, passwd):
     #Connect WLAN
+    global led
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     #wlan.connect("Wifi-Choice-Public", "065057289")
     wlan.connect(ssid, passwd)
     while wlan.isconnected() == False:
         print('Waiting for connection...')
+        led.toggle()
         time.sleep(1)
     #print(wlan.ifconfig())
     return wlan.ifconfig()[0]
@@ -34,38 +36,38 @@ def reqTime(addr='uk.pool.ntp.org'):
     client.close()
     return time.gmtime(t)
 
-async def sendmsg_task(addr, port):
-    import time
-    import socket
-    global message 
-    global pending
-    global thread_exit
-    
-    #while pending == False:
-        #print("waiting for netstart")
-        #time.sleep(0.5)
-    #pending = False
-    #client2 = socket.socket()
-    #client2.connect(socket.getaddrinfo(addr, port)[0][-1])
-    #client2.settimeout(0.75)
-    print(thread_exit)
+def sendmsg_task(addr, port):
+    #import time
+    #import socket
+    global message, thread_exit, lock
+
+    print("thread_exit", thread_exit)
     while not thread_exit:
-        if pending == False:
-            print("core1 sleep")
-            time.sleep(0.25)
+        print("send waiting...")
+        wait_counter = 0
+        while not lock.acquire(1, 0.001):
+            if thread_exit:
+                break
+            wait_counter += 1
+        lock.release()
+        if thread_exit:
+            print("break send loop")
+            break
+        if message == "":
+            print("empty loop again")
             continue
+        
+        print(f"send wait{wait_counter} ended", message)
+        msg = message
+        message = ""
         client2 = socket.socket()
         client2.connect(socket.getaddrinfo(addr, port)[0][-1])
+        
         #client2.settimeout(0.75)   
-        pending = False
-        print("send ", message)
-        client2.send(message)
-        if message == "end":
-            break
-        print("#62")
+        #pending = False
+        
+        client2.send(msg)
         data, address = client2.recvfrom(1024)
-        #data = client2,recv(10)
-        print("#64")
         if data:
             print(data, address)
         client2.close()
@@ -74,21 +76,16 @@ async def sendmsg_task(addr, port):
 
 def sendmsg(addr, port, msg):
     client = socket.socket()
-    client.connect(socket.getaddrinfo(addr, port)[0][-1])
-        #client2.settimeout(0.75)   
+    client.connect(socket.getaddrinfo(addr, port)[0][-1])   
         
     print("send ", msg)
     client.send(msg)
     if msg == "end":
         return 0
-    #print("#62")
     data, address = client.recvfrom(1024)
-    #data = client2,recv(10)
-    #print("#64")
     if data:
         print(data, address)
     client.close()
-    print("thread exits")
     return 1
 
 def gettime():
@@ -101,15 +98,19 @@ def tick(timer):
     led.toggle()
     
 led = Pin("LED", Pin.OUT)
+lock = _thread.allocate_lock()
+thread_exit = False
+message = ""
+
 def main(ssid, passwd, addr):
-    global led
-    thread_exit = False
-    message = ""
-    pending = False
+    global led, lock, message, thread_exit
+    #pending = False
+    
+    time.sleep(0.5)
+    led.on()
     #utime.sleep_ms(500)
     print(connect(ssid, passwd))
     gettime()
-
 
     utime.sleep_ms(100)
     now = utime.localtime()
@@ -117,45 +118,60 @@ def main(ssid, passwd, addr):
     filename=f"adxl{now[7]}-{now[3]}-{now[4]}-{now[5]}.txt";
 
     
-    led.on()
+   
 
     #message = "time"
     #pending = True
     #sendmsg_task('192.168.1.66', 5021)
     start = time.ticks_ms()
-
-    #msg_thread = _thread.start_new_thread(sendmsg_task, (addr, 5021))
+    
+    lock.acquire()
+    msg_thread = _thread.start_new_thread(sendmsg_task, (addr, 5021))
     time.sleep(1.5)
     tim = Timer()
-    tim.init(freq=2, mode=Timer.PERIODIC, callback=tick) 
+    tim.init(freq=3, mode=Timer.PERIODIC, callback=tick) 
 
     #message = "end"
     #pending = True
     #sendmsg_task(addr, 5021)
-    print("time")
+    
+
     message = "time"
-    pending = True
-    sendmsg(addr, 5021, message)
+    lock.release()
+    time.sleep(0.5)
+    print("main [", message, "]")
+    print(lock.acquire(1,1), "wait result")
+    #pending = True
+    
+    #sendmsg(addr, 5021, message)
     time.sleep(5)
 
     print("date")
     message = "date"
-    pending = True
-    sendmsg(addr, 5021, message)
+    lock.release()
+    #pending = True
+    time.sleep(0.5)
+    lock.acquire()
+    #sendmsg(addr, 5021, message)
     time.sleep(5)
 
     print("time")
     message = "time"
-    pending = True
-    sendmsg(addr, 5021, message)
+    lock.release()
+    time.sleep(0.5)
+    lock.acquire()
+    #pending = True
+    #sendmsg(addr, 5021, message)
     time.sleep(5)
 
     print("end")
-    message = "end"
-    pending = True
+    message = ""
+    #pending = True
     time.sleep(10)
-    pending = True
+    #pending = True
 
+    thread_exit = True
+    lock.release()
 
     print("main exits")
     tim.deinit()

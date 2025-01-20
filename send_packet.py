@@ -16,7 +16,7 @@ def connect(ssid, passwd):
     wlan.active(True)
     #wlan.connect("Wifi-Choice-Public", "065057289")
     wlan.connect(ssid, passwd)
-    while wlan.isconnected() == False:
+    while not wlan.isconnected():
         print('Waiting for connection...')
         led.toggle()
         time.sleep(1)

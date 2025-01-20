@@ -9,32 +9,7 @@ import rp2
 import _thread
 import asyncio
 
-def connect(ssid, passwd):
-    #Connect WLAN
-    global led
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    #wlan.connect("Wifi-Choice-Public", "065057289")
-    wlan.connect(ssid, passwd)
-    while not wlan.isconnected():
-        print('Waiting for connection...')
-        led.toggle()
-        time.sleep(1)
-    #print(wlan.ifconfig())
-    return wlan.ifconfig()[0]
     
-def reqTime(addr='uk.pool.ntp.org'):
-    REF_TIME_1970 = 2208988800
-    client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    data = b'\x1b' + 47 * b'\0'
-    client.connect(socket.getaddrinfo(addr, 123)[0][-1])
-    client.send(data)
-    data, address = client.recvfrom(1024)
-    if data:
-        t = struct.unpack('!12I', data)[10]
-        t -= REF_TIME_1970
-    client.close()
-    return time.gmtime(t)
 
 def sendmsg_task(addr, port):
     #import time
@@ -74,24 +49,24 @@ def sendmsg_task(addr, port):
     print("thread exits")
     return 1
 
-def sendmsg(addr, port, msg):
-    client = socket.socket()
-    client.connect(socket.getaddrinfo(addr, port)[0][-1])   
+#def sendmsg(addr, port, msg):
+    #client = socket.socket()
+    #client.connect(socket.getaddrinfo(addr, port)[0][-1])   
         
-    print("send ", msg)
-    client.send(msg)
-    if msg == "end":
-        return 0
-    data, address = client.recvfrom(1024)
-    if data:
-        print(data, address)
-    client.close()
-    return 1
+    #print("send ", msg)
+    #client.send(msg)
+    #if msg == "end":
+    #    return 0
+    #data, address = client.recvfrom(1024)
+    #if data:
+    #    print(data, address)
+    #client.close()
+    #return 1
 
-def gettime():
-    tim = reqTime()
-    rtc = RTC()
-    rtc.datetime((tim[0], tim[1], tim[2], 0, tim[3]+8, tim[4], tim[5], 0))
+#def gettime():
+    #tim = reqTime()
+    #rtc = RTC()
+    #rtc.datetime((tim[0], tim[1], tim[2], 0, tim[3]+8, tim[4], tim[5], 0))
 
 def tick(timer):
     global led
@@ -102,19 +77,19 @@ lock = _thread.allocate_lock()
 thread_exit = False
 message = ""
 
-def main(ssid, passwd, addr):
+def main(addr):
     global led, lock, message, thread_exit
     #pending = False
     
     time.sleep(0.5)
     led.on()
     #utime.sleep_ms(500)
-    print(connect(ssid, passwd))
-    gettime()
+    #print(connect(ssid, passwd))
+    #gettime()
 
     utime.sleep_ms(100)
     now = utime.localtime()
-    print(now)
+    #print(now)
     filename=f"adxl{now[7]}-{now[3]}-{now[4]}-{now[5]}.txt";
 
     

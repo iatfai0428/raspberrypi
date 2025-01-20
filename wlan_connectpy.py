@@ -14,7 +14,7 @@ def connect():
     wlan.active(True)
     #wlan.connect("Wifi-Choice-Public", "065057289")
     wlan.connect("Wifi-Choice", "Ch-5057289")
-    while wlan.isconnected() == False:
+    while not wlan.isconnected():
         print('Waiting for connection...')
         time.sleep(1)
     #print(wlan.ifconfig())

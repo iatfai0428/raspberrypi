@@ -8,12 +8,14 @@ def connect(ssid, passwd):
     global led
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
-    #wlan.connect("Wifi-Choice-Public", "065057289")
+    
     wlan.connect(ssid, passwd)
+    wlan.config(hostname="pico1")
     while not wlan.isconnected():
         print('Waiting for connection...')
         led.toggle()
         time.sleep(1)
     #print(wlan.ifconfig())
+    #print(wlan.config("hostname"))
     return wlan.ifconfig()[0]
 

@@ -2,12 +2,14 @@ from machine import Pin, RTC, Timer
 import utime
 import network
 import socket
+import usocket
 import time
 import struct
 import sys
 import rp2
 import _thread
 import asyncio
+import wlan_connect
 
 def sendmsg_task(addr, port):
     global message, thread_exit, lock
@@ -32,7 +34,7 @@ def sendmsg_task(addr, port):
         msg = message
         message = ""
         client2 = socket.socket()
-        client2.connect(socket.getaddrinfo(addr, port)[0][-1])
+        client2.connect(usocket.getaddrinfo(addr, port)[0][-1])
         
         client2.send(msg)
         data, address = client2.recvfrom(1024)
@@ -58,9 +60,8 @@ def main(addr):
     time.sleep(0.5)
     led.on()
     
-
     now = utime.localtime()
-    filename=f"adxl{now[7]}-{now[3]}-{now[4]}-{now[5]}.txt";
+    filename = f"adxl{now[7]}-{now[3]}-{now[4]}-{now[5]}.txt";
 
     start = time.ticks_ms()
     
@@ -102,3 +103,8 @@ def main(addr):
     print("main exits")
     tim.deinit()
     led.off()
+    
+ip = wlan_connect.connect('Wifi-Choice', 'Ch-5057289')
+main('isaac-ally')
+
+
